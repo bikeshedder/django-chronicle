@@ -1,0 +1,11 @@
+*.py[co]
+*.swp
+.DS_Store
+.swp
+.git
+.orig
+/*.egg
+*.egg-info
+/docs/_build
+/build
+/dist
