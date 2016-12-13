@@ -5,7 +5,7 @@ from django.apps import apps
 from django.db import connection
 from django.db.models import signals
 
-__version__ == '0.1.0'
+__version__ = '0.1.0'
 
 
 local = threading.local()
