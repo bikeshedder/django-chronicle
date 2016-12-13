@@ -5,6 +5,7 @@ from collections import defaultdict
 
 from django.conf import settings
 from django.db import models
+from django.db.transaction import atomic
 
 from django.db.models import signals
 from django.dispatch import receiver
@@ -97,19 +98,25 @@ class AbstractRevision(models.Model):
         self.objects_created = defaultdict(lambda: [])
         self.objects_updated = defaultdict(lambda: [])
         self.objects_deleted = defaultdict(lambda: [])
+        self._atomic = None
         super(AbstractRevision, self).__init__(*args, **kwargs)
 
     def __enter__(self):
         if get_current_revision(allow_none=True):
             raise RuntimeError('Another revision is already active')
+        self._atomic = atomic()
+        self._atomic.__enter__()
         self.save()
         set_current_revision(self)
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback):
         try:
-            revision_complete.send(sender=self)
+            if exc_type is None:
+                revision_complete.send(sender=self)
+            self._atomic.__exit__(exc_type, exc_value, traceback)
         finally:
             set_current_revision(None)
+            self._atomic = None
 
     def add_created(self, obj):
         self.objects_created[obj.__class__].append(obj)
