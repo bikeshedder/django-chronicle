@@ -24,9 +24,9 @@ def set_current_revision(revision):
         # the following StackOverflow article:
         # http://stackoverflow.com/a/19410907/994342
         if revision:
-            cursor.execute('SET chronicle.revision_id = %s', [revision.id])
+            cursor.execute("SELECT set_config('chronicle.revision_id', '%s', true)", [revision.id])
         else:
-            cursor.execute('SET chronicle.revision_id TO DEFAULT')
+            cursor.execute("SELECT set_config('chronicle.revision_id', '', true)")
 
 
 class ChronicleAppConfig(AppConfig):
