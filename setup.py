@@ -12,11 +12,11 @@ def get_version():
     '''Get __version__ information from __init__.py without importing it'''
     VERSION_RE = r'^__version__\s*=\s*[\'"]([^\'"]+)[\'"]'
     VERSION_PATTERN = re.compile(VERSION_RE, re.MULTILINE)
-    m = VERSION_PATTERN.search(read('mushroom', '__init__.py'))
+    m = VERSION_PATTERN.search(read('chronicle', '__init__.py'))
     if m:
         return m.group(1)
     else:
-        raise RuntimeError('Could not get __version__ from mushroom/__init__.py')
+        raise RuntimeError('Could not get __version__ from chronicle/__init__.py')
 
 # Prevent "TypeError: 'NoneType' object is not callable" when running tests.
 # (http://www.eby-sarna.com/pipermail/peak/2010-May/003357.html)
