@@ -108,6 +108,7 @@ class AbstractRevision(models.Model):
         self._atomic.__enter__()
         self.save()
         set_current_revision(self)
+        return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         try:
