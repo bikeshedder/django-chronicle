@@ -29,6 +29,11 @@ def set_current_revision(revision):
             cursor.execute("SELECT set_config('chronicle.revision_id', '', true)")
 
 
+def get_models_with_history():
+    # FIXME this should be cached
+    return [model for apps.get_models() if issubclass(model, HistoryMixin)]
+
+
 class ChronicleAppConfig(AppConfig):
     name = 'chronicle'
     verbose_name = 'Chronicle'
@@ -40,9 +45,8 @@ class ChronicleAppConfig(AppConfig):
     def ready(self):
         from .models import create_history_model
         from .models import HistoryMixin
-        for model in apps.get_models():
-            if issubclass(model, HistoryMixin):
-                create_history_model(model)
+        for model in get_models_with_history():
+            create_history_model(model)
 
 
 default_app_config = 'chronicle.ChronicleAppConfig'
