@@ -1,8 +1,6 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from collections import defaultdict
-
 from django.conf import settings
 from django.db import models
 from django.db.transaction import atomic
@@ -95,9 +93,6 @@ class AbstractRevision(models.Model):
         abstract = True
 
     def __init__(self, *args, **kwargs):
-        self.objects_created = defaultdict(lambda: [])
-        self.objects_updated = defaultdict(lambda: [])
-        self.objects_deleted = defaultdict(lambda: [])
         self._atomic = None
         super(AbstractRevision, self).__init__(*args, **kwargs)
 
@@ -119,25 +114,13 @@ class AbstractRevision(models.Model):
             set_current_revision(None)
             self._atomic = None
 
-    def add_created(self, obj):
-        self.objects_created[obj.__class__].append(obj)
-
-    def add_updated(self, obj):
-        self.objects_updated[obj.__class__].append(obj)
-
-    def add_deleted(self, obj):
-        self.objects_deleted[obj.__class__].append(obj)
-
 
 @receiver(signals.pre_save)
-def model_pre_save(sender, instance, raw, update_fields=None, **options):
+@receiver(signals.pre_delete)
+def model_pre_save(sender, instance, raw=False, **options):
     if raw:
         return
     if isinstance(instance, HistoryMixin):
         # Be nice and set the revision field in the pre_save signal. It is
         # also set using the DB trigger so this is not really neccesary.
         instance.revision = get_current_revision()
-        if instance.id:
-            instance.revision.add_updated(instance)
-        else:
-            instance.revision.add_created(instance)
