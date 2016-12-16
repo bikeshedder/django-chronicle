@@ -63,9 +63,11 @@ def create_history_model(model):
             # Field.remote_field returns an AutoField even if the target
             # field is actually something else. Therefore we use the
             # Meta.get_field() method from the target model.
+            field_name = field.name + '_id'
             field_cls = type(field.remote_field.to._meta.get_field(
                     field.remote_field.target_field.name))
         else:
+            field_name = field.name
             field_cls = type(field)
         if issubclass(field_cls, models.AutoField):
             field_cls = models.IntegerField
@@ -79,7 +81,7 @@ def create_history_model(model):
         for kwarg in COPY_FIELD_KWARGS:
             if hasattr(field, kwarg):
                 field_kwargs[kwarg] = getattr(field, kwarg)
-        attrs[field.name] = field_cls(**field_kwargs)
+        attrs[field_name] = field_cls(**field_kwargs)
     #print(set(field.name for field in model._meta.get_fields() if field.concrete) - \
     #        set(field.name for field in model._meta.local_fields))
     history_model = type(model.__name__ + b'History', (History, models.Model), attrs)
