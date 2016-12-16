@@ -108,7 +108,7 @@ class AbstractRevision(models.Model):
     def __exit__(self, exc_type, exc_value, traceback):
         try:
             if exc_type is None:
-                revision_complete.send(sender=self)
+                revision_complete.send(sender=self.__class__, revision=self)
             self._atomic.__exit__(exc_type, exc_value, traceback)
         finally:
             set_current_revision(None)
