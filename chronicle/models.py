@@ -48,7 +48,7 @@ class HistoryField(models.Field):
 def create_history_model(model):
     class Meta:
         db_table = model._meta.db_table + '_history'
-        #unique_together = (('id', 'revision'),)
+        unique_together = (('id', 'revision_id'),)
     attrs = {
         '__module__': model.__module__,
         # The _pk column is just here to make django happy. Django requires

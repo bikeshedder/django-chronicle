@@ -25,7 +25,8 @@ def escape_function_name(s):
 INSERT_UPDATE_FUNCTION_SQL = '''CREATE FUNCTION %(function_name)s() RETURNS trigger AS
 $BODY$
 BEGIN
-    INSERT INTO %(history_table)s (%(fields)s, "revision_id", "_op") VALUES (%(values)s, current_setting('chronicle.revision_id')::int, TG_OP);
+    INSERT INTO %(history_table)s (%(fields)s, "revision_id", "_op") VALUES (%(values)s, current_setting('chronicle.revision_id')::int, TG_OP)
+    ON CONFLICT ON CONSTRAINT %(unique_together_constraint)s DO UPDATE SET %(update_set)s;
     RETURN NEW;
 END
 $BODY$
@@ -43,6 +44,7 @@ EXECUTE PROCEDURE %(function_name)s();
 DELETE_FUNCTION_SQL = '''CREATE FUNCTION %(function_name)s() RETURNS trigger AS
 $BODY$
 BEGIN
+    DELETE FROM %(history_table)s WHERE "id"=OLD."id" AND "revision_id"=current_setting('chronicle.revision_id')::int;
     INSERT INTO %(history_table)s (%(fields)s, "revision_id", "_op") VALUES (%(values)s, current_setting('chronicle.revision_id')::int, TG_OP);
     RETURN OLD;
 END
@@ -58,7 +60,18 @@ FOR EACH ROW
 EXECUTE PROCEDURE %(function_name)s();
 '''
 
+def get_unique_together_constraint(model, cursor):
+    # Get name of unique_together constraint. There is no currently no better way
+    # than accessing the system tables and get the only *_uniq constraint from there.
+    cursor.execute('SELECT "conname" FROM "pg_constraint" WHERE "conrelid"=(SELECT "oid" FROM "pg_class" WHERE "relname" LIKE %s)', (model.History._meta.db_table,))
+    constraints = cursor.fetchall()
+    constraints = [c[0] for c in constraints if c[0].endswith('_uniq')]
+    if len(constraints) != 1:
+        raise RuntimeError('Could not autodetect unique_together constraint. More than one constraint ending with _uniq was found: %s' % (', '.join(constraints)))
+    return constraints[0]
+
 def create_trigger(model, cursor):
+    unique_together_constraint = get_unique_together_constraint(model, cursor)
     fields = [
         field.db_column or field.get_attname()
         for field in model._meta.local_fields
@@ -70,7 +83,9 @@ def create_trigger(model, cursor):
         'table': model._meta.db_table,
         'history_table': model.History._meta.db_table,
         'fields': ', '.join(escape_identifier(f) for f in fields),
-        'values': ', '.join('NEW.' + escape_identifier(f) for f in fields)
+        'values': ', '.join('NEW.' + escape_identifier(f) for f in fields),
+        'update_set': ', '.join('%s=%s' % (escape_identifier(f), 'NEW.' + escape_identifier(f)) for f in fields),
+        'unique_together_constraint': unique_together_constraint,
     }
     cursor.execute(INSERT_UPDATE_FUNCTION_SQL % d)
     cursor.execute(INSERT_UPDATE_TRIGGER_SQL % d)
