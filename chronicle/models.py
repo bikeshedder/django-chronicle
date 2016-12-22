@@ -131,7 +131,7 @@ class AbstractRevision(models.Model):
                 self._atomic.__exit__()
                 self._atomic = None
         except:
-            self._atomic.__exit__(sys.exc_type, sys.exc_value, sys.traceback)
+            self._atomic.__exit__(sys.exc_type, sys.exc_value, sys.exc_traceback)
             self._atomic = None
             raise
 
