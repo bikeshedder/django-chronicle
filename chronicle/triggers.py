@@ -46,7 +46,7 @@ DELETE_FUNCTION_SQL = '''CREATE FUNCTION %(function_name)s() RETURNS trigger AS
 $BODY$
 BEGIN
     DELETE FROM %(history_table)s WHERE "id"=OLD."id" AND "revision_id"=current_setting('chronicle.revision_id')::%(revision_id_type)s;
-    INSERT INTO %(history_table)s (%(fields)s, "revision_id", "_op") VALUES (%(values)s, current_setting('chronicle.revision_id')::$(revision_id_type)s, TG_OP);
+    INSERT INTO %(history_table)s (%(fields)s, "revision_id", "_op") VALUES (%(values)s, current_setting('chronicle.revision_id')::%(revision_id_type)s, TG_OP);
     RETURN OLD;
 END
 $BODY$
