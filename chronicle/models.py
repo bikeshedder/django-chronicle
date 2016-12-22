@@ -1,10 +1,11 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import sys
+
 from django.conf import settings
 from django.db import models
 from django.db.transaction import atomic
-
 from django.db.models import signals
 from django.dispatch import receiver
 
@@ -109,18 +110,30 @@ class AbstractRevision(models.Model):
             raise RuntimeError('Another revision is already active')
         self._atomic = atomic()
         self._atomic.__enter__()
-        self.save()
-        set_current_revision(self)
-        return self
+        try:
+            self.save()
+            set_current_revision(self)
+            return self
+        except:
+            self._atomic.__exit__(sys.exc_type, sys.exc_value, sys.exc_traceback)
+            self._atomic = None
+            raise
 
     def __exit__(self, exc_type, exc_value, traceback):
         try:
             if exc_type is None:
                 revision_complete.send(sender=self.__class__, revision=self)
-            self._atomic.__exit__(exc_type, exc_value, traceback)
-        finally:
-            set_current_revision(None)
+                set_current_revision(None)
+                self._atomic.__exit__(exc_type, exc_value, traceback)
+                self._atomic = None
+            else:
+                set_current_revision(None)
+                self._atomic.__exit__()
+                self._atomic = None
+        except:
+            self._atomic.__exit__(sys.exc_type, sys.exc_value, sys.traceback)
             self._atomic = None
+            raise
 
 
 @receiver(signals.pre_save)
