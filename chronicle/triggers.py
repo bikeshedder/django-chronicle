@@ -87,7 +87,7 @@ def create_trigger(model, cursor):
         'values': ', '.join('NEW.' + escape_identifier(f) for f in fields),
         'update_set': ', '.join('%s=%s' % (escape_identifier(f), 'NEW.' + escape_identifier(f)) for f in fields),
         'unique_together_constraint': unique_together_constraint,
-        'revision_id_type': getattr(settings, REVISION_ID_TYPE, 'int'),
+        'revision_id_type': getattr(settings, 'REVISION_ID_TYPE', 'int'),
     }
     cursor.execute(INSERT_UPDATE_FUNCTION_SQL % d)
     cursor.execute(INSERT_UPDATE_TRIGGER_SQL % d)
@@ -99,7 +99,7 @@ def create_trigger(model, cursor):
         'history_table': model.History._meta.db_table,
         'fields': ', '.join(escape_identifier(f) for f in fields),
         'values': ', '.join('OLD.' + escape_identifier(f) for f in fields),
-        'revision_id_type': getattr(settings, REVISION_ID_TYPE, 'int'),
+        'revision_id_type': getattr(settings, 'REVISION_ID_TYPE', 'int'),
     }
     cursor.execute(DELETE_FUNCTION_SQL % d)
     cursor.execute(DELETE_TRIGGER_SQL % d)
