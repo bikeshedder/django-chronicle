@@ -98,7 +98,7 @@ def create_trigger(model, cursor):
         'table': model._meta.db_table,
         'history_table': model.History._meta.db_table,
         'fields': ', '.join(escape_identifier(f) for f in fields),
-        'values': ', '.join('OLD.' + escape_identifier(f) for f in fields)
+        'values': ', '.join('OLD.' + escape_identifier(f) for f in fields),
         'revision_id_type': getattr(settings, REVISION_ID_TYPE, 'int'),
     }
     cursor.execute(DELETE_FUNCTION_SQL % d)
