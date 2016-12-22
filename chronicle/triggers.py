@@ -1,5 +1,6 @@
 from django.db import connection
 from django.apps import apps
+from django.conf import settings
 
 from .models import HistoryMixin
 
@@ -25,7 +26,7 @@ def escape_function_name(s):
 INSERT_UPDATE_FUNCTION_SQL = '''CREATE FUNCTION %(function_name)s() RETURNS trigger AS
 $BODY$
 BEGIN
-    INSERT INTO %(history_table)s (%(fields)s, "revision_id", "_op") VALUES (%(values)s, current_setting('chronicle.revision_id')::int, TG_OP)
+    INSERT INTO %(history_table)s (%(fields)s, "revision_id", "_op") VALUES (%(values)s, current_setting('chronicle.revision_id')::%(revision_id_type)s, TG_OP)
     ON CONFLICT ON CONSTRAINT %(unique_together_constraint)s DO UPDATE SET %(update_set)s;
     RETURN NEW;
 END
@@ -44,8 +45,8 @@ EXECUTE PROCEDURE %(function_name)s();
 DELETE_FUNCTION_SQL = '''CREATE FUNCTION %(function_name)s() RETURNS trigger AS
 $BODY$
 BEGIN
-    DELETE FROM %(history_table)s WHERE "id"=OLD."id" AND "revision_id"=current_setting('chronicle.revision_id')::int;
-    INSERT INTO %(history_table)s (%(fields)s, "revision_id", "_op") VALUES (%(values)s, current_setting('chronicle.revision_id')::int, TG_OP);
+    DELETE FROM %(history_table)s WHERE "id"=OLD."id" AND "revision_id"=current_setting('chronicle.revision_id')::%(revision_id_type)s;
+    INSERT INTO %(history_table)s (%(fields)s, "revision_id", "_op") VALUES (%(values)s, current_setting('chronicle.revision_id')::$(revision_id_type)s, TG_OP);
     RETURN OLD;
 END
 $BODY$
@@ -86,6 +87,7 @@ def create_trigger(model, cursor):
         'values': ', '.join('NEW.' + escape_identifier(f) for f in fields),
         'update_set': ', '.join('%s=%s' % (escape_identifier(f), 'NEW.' + escape_identifier(f)) for f in fields),
         'unique_together_constraint': unique_together_constraint,
+        'revision_id_type': getattr(settings, REVISION_ID_TYPE, 'int'),
     }
     cursor.execute(INSERT_UPDATE_FUNCTION_SQL % d)
     cursor.execute(INSERT_UPDATE_TRIGGER_SQL % d)
@@ -97,6 +99,7 @@ def create_trigger(model, cursor):
         'history_table': model.History._meta.db_table,
         'fields': ', '.join(escape_identifier(f) for f in fields),
         'values': ', '.join('OLD.' + escape_identifier(f) for f in fields)
+        'revision_id_type': getattr(settings, REVISION_ID_TYPE, 'int'),
     }
     cursor.execute(DELETE_FUNCTION_SQL % d)
     cursor.execute(DELETE_TRIGGER_SQL % d)
