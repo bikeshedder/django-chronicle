@@ -25,6 +25,12 @@ class HistoryMixin(models.Model):
         abstract = True
 
 
+class ManyToManyModel(HistoryMixin, models.Model):
+
+    class Meta:
+        abstract = True
+
+
 class History(models.Model):
     _op = models.CharField(max_length=10, choices=(
         ('INSERT', 'INSERT'),
