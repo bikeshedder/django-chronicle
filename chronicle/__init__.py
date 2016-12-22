@@ -24,7 +24,7 @@ def set_current_revision(revision):
         # the following StackOverflow article:
         # http://stackoverflow.com/a/19410907/994342
         if revision:
-            cursor.execute("SELECT set_config('chronicle.revision_id', %s, true)", [revision.id])
+            cursor.execute("SELECT set_config('chronicle.revision_id', %s::varchar, true)", [revision.id])
         else:
             cursor.execute("SELECT set_config('chronicle.revision_id', '', true)")
 
