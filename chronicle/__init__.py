@@ -4,11 +4,24 @@ from django.apps import AppConfig
 from django.apps import apps
 from django.db import connection
 from django.db.models import signals
+from django.dispatch import receiver
 
 __version__ = '0.1.0'
 
 
 local = threading.local()
+
+
+def on_pre_migrate(**kwargs):
+    from . import triggers
+    triggers.drop_triggers()
+
+
+def on_post_migrate(**kwargs):
+    from . import utils
+    utils.create_initial_history()
+    from . import triggers
+    triggers.create_triggers()
 
 
 def get_current_revision(allow_none=False):
@@ -45,6 +58,8 @@ class ChronicleAppConfig(AppConfig):
     def __init__(self, *args, **kwargs):
         super(ChronicleAppConfig, self).__init__(*args, **kwargs)
         #signals.class_prepared.connect(on_class_prepared)
+        signals.pre_migrate.connect(on_pre_migrate, sender=self)
+        signals.post_migrate.connect(on_post_migrate, sender=self)
 
     def ready(self):
         from .models import create_history_model

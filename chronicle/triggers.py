@@ -1,5 +1,7 @@
+from __future__ import print_function
+
+from django.apps import apps as global_apps
 from django.db import connection
-from django.apps import apps
 from django.conf import settings
 
 from .models import HistoryMixin
@@ -61,6 +63,7 @@ FOR EACH ROW
 EXECUTE PROCEDURE %(function_name)s();
 '''
 
+
 def get_unique_together_constraint(model, cursor):
     # Get name of unique_together constraint. There is no currently no better way
     # than accessing the system tables and get the only *_uniq constraint from there.
@@ -70,6 +73,7 @@ def get_unique_together_constraint(model, cursor):
     if len(constraints) != 1:
         raise RuntimeError('Could not autodetect unique_together constraint. More than one constraint ending with _uniq was found: %s' % (', '.join(constraints)))
     return constraints[0]
+
 
 def create_trigger(model, cursor):
     unique_together_constraint = get_unique_together_constraint(model, cursor)
@@ -105,24 +109,43 @@ def create_trigger(model, cursor):
     cursor.execute(DELETE_TRIGGER_SQL % d)
 
 
-def recreate():
+def drop_triggers():
     with connection.cursor() as cursor:
-        print 'Dropping existing chronicle_* triggers:'
         cursor.execute("SELECT relname, tgname FROM pg_trigger JOIN pg_class ON tgrelid=pg_class.oid WHERE tgname LIKE 'chronicle_%'")
         triggers = list(cursor.fetchall())
-        for trigger in triggers:
-            print('- %s.%s' % trigger)
-            cursor.execute("DROP TRIGGER %s ON %s" % (
-                    escape_identifier(trigger[1]),
-                    escape_identifier(trigger[0])))
-        print('Dropping existing chronicle_* functions:')
+        if triggers:
+            print('Dropping existing chronicle triggers:')
+            for trigger in triggers:
+                print('- %s.%s' % trigger)
+                cursor.execute("DROP TRIGGER %s ON %s" % (
+                        escape_identifier(trigger[1]),
+                        escape_identifier(trigger[0])))
         cursor.execute("SELECT proname FROM pg_proc WHERE proname LIKE 'chronicle_%'")
-        names = [row[0] for row in cursor.fetchall()]
-        for name in names:
-            print('- %s' % name)
-            cursor.execute("DROP FUNCTION %s();" % escape_identifier(name))
-        print('Creating new chronicle_* triggers:')
-        for model in apps.get_models():
-            if issubclass(model, HistoryMixin):
+        functions = [row[0] for row in cursor.fetchall()]
+        if functions:
+            print('Dropping existing chronicle functions:')
+            for function in functions:
+                print('- %s' % function)
+                cursor.execute("DROP FUNCTION %s();" % escape_identifier(function))
+
+
+def create_triggers(apps=global_apps):
+    models = [
+        model
+        for model in apps.get_models()
+        if issubclass(model, HistoryMixin)
+    ]
+    if models:
+        with connection.cursor() as cursor:
+            print('Creating chronicle triggers:')
+            first = True
+            for model in models:
+                if not first:
+                    first = False
                 print('- %s.%s' % (model._meta.app_label, model._meta.model_name))
                 create_trigger(model, cursor)
+
+
+def recreate():
+    drop_triggers()
+    create_triggers()
