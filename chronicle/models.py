@@ -19,7 +19,8 @@ class HistoryManager(object):
 
 
 class HistoryMixin(models.Model):
-    revision = models.ForeignKey(settings.REVISION_MODEL, null=True, blank=True)
+    revision = models.ForeignKey(settings.REVISION_MODEL, null=True, blank=True,
+            related_name='+')
     history = HistoryManager()
 
     class Meta:
