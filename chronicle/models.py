@@ -92,7 +92,7 @@ def create_history_model(model):
         attrs[field_name] = field_cls(**field_kwargs)
     #print(set(field.name for field in model._meta.get_fields() if field.concrete) - \
     #        set(field.name for field in model._meta.local_fields))
-    history_model = type(model.__name__ + b'History', (History, models.Model), attrs)
+    history_model = type(model.__name__ + 'History', (History, models.Model), attrs)
     model.History = history_model
     return history_model
 
