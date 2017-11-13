@@ -30,16 +30,17 @@ def get_current_revision(allow_none=False):
     return getattr(local, 'revision', None)
 
 
-def set_current_revision(revision):
+def set_current_revision(revision, database=True):
     local.revision = revision
-    with connection.cursor() as cursor:
-        # The idea to use a non-standard session variable was taken from
-        # the following StackOverflow article:
-        # http://stackoverflow.com/a/19410907/994342
-        if revision:
-            cursor.execute("SELECT set_config('chronicle.revision_id', %s::varchar, true)", [revision.id])
-        else:
-            cursor.execute("SELECT set_config('chronicle.revision_id', '', true)")
+    if database:
+        with connection.cursor() as cursor:
+            # The idea to use a non-standard session variable was taken from
+            # the following StackOverflow article:
+            # http://stackoverflow.com/a/19410907/994342
+            if revision:
+                cursor.execute("SELECT set_config('chronicle.revision_id', %s::varchar, true)", [revision.id])
+            else:
+                cursor.execute("SELECT set_config('chronicle.revision_id', '', true)")
 
 
 def get_models_with_history():

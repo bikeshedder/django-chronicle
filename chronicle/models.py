@@ -122,8 +122,10 @@ class AbstractRevision(models.Model):
 
     def __exit__(self, exc_type, exc_value, traceback):
         try:
-            if exc_type is None:
-                set_current_revision(None)
+            # TODO Is there a good way to detect if the DB connection is still
+            # useable? Right now we simply skip the DB operation if the context
+            # is exited because of an exception.
+            set_current_revision(None, database=not exc_type)
             self._atomic.__exit__(exc_type, exc_value, traceback)
             self._atomic = None
         except:
