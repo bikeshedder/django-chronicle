@@ -85,7 +85,7 @@ def create_history_model(model):
             'null': True,
             'db_column': field.db_column or field.get_attname(),
         }
-        COPY_FIELD_KWARGS = ['max_length', 'decimal_places', 'max_digits']
+        COPY_FIELD_KWARGS = ['max_length', 'decimal_places', 'max_digits', 'base_field']
         for kwarg in COPY_FIELD_KWARGS:
             if hasattr(field, kwarg):
                 field_kwargs[kwarg] = getattr(field, kwarg)
