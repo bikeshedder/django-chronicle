@@ -116,7 +116,7 @@ class AbstractRevision(models.Model):
             set_current_revision(self)
             return self
         except:
-            self._atomic.__exit__(sys.exc_type, sys.exc_value, sys.exc_traceback)
+            self._atomic.__exit__(*sys.exc_info())
             self._atomic = None
             raise
 
@@ -129,7 +129,7 @@ class AbstractRevision(models.Model):
             self._atomic.__exit__(exc_type, exc_value, traceback)
             self._atomic = None
         except:
-            self._atomic.__exit__(sys.exc_type, sys.exc_value, sys.exc_traceback)
+            self._atomic.__exit__(*sys.exc_info())
             self._atomic = None
             raise
         else:
