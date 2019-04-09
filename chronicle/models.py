@@ -72,7 +72,7 @@ def create_history_model(model):
             # field is actually something else. Therefore we use the target
             # field instead.
             field_name = field.name + '_id'
-            field_cls = type(field.remote_field.target_field)
+            field_cls = type(field.remote_field.get_related_field())
         else:
             field_name = field.name
             field_cls = type(field)
