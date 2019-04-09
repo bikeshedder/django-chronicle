@@ -67,13 +67,12 @@ def create_history_model(model):
     for field in model._meta.local_fields:
         # XXX should we use a proper revision FK field? right now it is reduced
         # to a single integer
-        if field.rel:
+        if field.remote_field:
             # Field.remote_field returns an AutoField even if the target
-            # field is actually something else. Therefore we use the
-            # Meta.get_field() method from the target model.
+            # field is actually something else. Therefore we use the target
+            # field instead.
             field_name = field.name + '_id'
-            field_cls = type(field.remote_field.to._meta.get_field(
-                    field.remote_field.target_field.name))
+            field_cls = type(field.remote_field.target_field)
         else:
             field_name = field.name
             field_cls = type(field)
