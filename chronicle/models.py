@@ -96,8 +96,6 @@ def create_history_model(model):
             if hasattr(field, kwarg):
                 field_kwargs[kwarg] = getattr(field, kwarg)
         attrs[field_name] = field_cls(**field_kwargs)
-    #print(set(field.name for field in model._meta.get_fields() if field.concrete) - \
-    #        set(field.name for field in model._meta.local_fields))
     history_model = type(model.__name__ + 'History', (History, models.Model), attrs)
     model.History = history_model
     return history_model

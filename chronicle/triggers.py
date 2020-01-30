@@ -114,19 +114,21 @@ def drop_triggers():
         cursor.execute("SELECT relname, tgname FROM pg_trigger JOIN pg_class ON tgrelid=pg_class.oid WHERE tgname LIKE 'chronicle_%'")
         triggers = list(cursor.fetchall())
         if triggers:
-            print('Dropping existing chronicle triggers:')
+            print('Dropping existing chronicle triggers', end='', flush=True)
             for trigger in triggers:
-                print('- %s.%s' % trigger)
+                print('.', end='', flush=True)
                 cursor.execute("DROP TRIGGER %s ON %s" % (
                         escape_identifier(trigger[1]),
                         escape_identifier(trigger[0])))
+            print(flush=True)
         cursor.execute("SELECT proname FROM pg_proc WHERE proname LIKE 'chronicle_%'")
         functions = [row[0] for row in cursor.fetchall()]
         if functions:
-            print('Dropping existing chronicle functions:')
+            print('Dropping existing chronicle functions', end='', flush=True)
             for function in functions:
-                print('- %s' % function)
+                print('.', end='', flush=True)
                 cursor.execute("DROP FUNCTION %s();" % escape_identifier(function))
+            print(flush=True)
 
 
 def create_triggers(apps=global_apps):
@@ -137,13 +139,14 @@ def create_triggers(apps=global_apps):
     ]
     if models:
         with connection.cursor() as cursor:
-            print('Creating chronicle triggers:')
+            print('Creating chronicle triggers', end='', flush=True)
             first = True
             for model in models:
                 if not first:
                     first = False
-                print('- %s.%s' % (model._meta.app_label, model._meta.model_name))
+                print('.', end='', flush=True)
                 create_trigger(model, cursor)
+            print(flush=True)
 
 
 def recreate():
