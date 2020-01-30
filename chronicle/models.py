@@ -72,6 +72,13 @@ def create_history_model(model):
             # field is actually something else. Therefore we use the target
             # field instead.
             field_name = field.name + '_id'
+            if isinstance(field.remote_field.model, str):
+                # This happens when processing a ForeignKey field which did
+                # not resolved because the target app is missing from INSTALLED_APPS.
+                # There is nothing we can to about this right now and we just
+                # ignore this field as it is already reported by the Django check
+                # subsystem.
+                continue
             field_cls = type(field.remote_field.get_related_field())
         else:
             field_name = field.name
