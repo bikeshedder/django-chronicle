@@ -4,6 +4,7 @@
 .swp
 .git
 .orig
+.eggs
 /*.egg
 *.egg-info
 /docs/_build
