@@ -82,8 +82,6 @@ def create_history_model(model):
             field_cls = type(field)
         if issubclass(field_cls, models.AutoField):
             field_cls = models.IntegerField
-        if issubclass(field_cls, models.BooleanField):
-            field_cls = models.NullBooleanField
         field_kwargs = {
             'null': True,
             'db_column': field.db_column or field.get_attname(),
