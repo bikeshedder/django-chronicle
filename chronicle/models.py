@@ -80,7 +80,9 @@ def create_history_model(model):
         else:
             field_name = field.name
             field_cls = type(field)
-        if issubclass(field_cls, models.AutoField):
+        if issubclass(field_cls, models.BigAutoField):
+            field_cls = models.BigIntegerField
+        elif issubclass(field_cls, models.AutoField):
             field_cls = models.IntegerField
         field_kwargs = {
             'null': True,
