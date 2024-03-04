@@ -1,40 +1,49 @@
 Django Chronicle is an implementation of the slowly changing dimensions type 4
 which uses database triggers.
 
-How to use?
------------
+# How to use?
 
-1.) Create a custom revision model. e.g.
+1. Create a custom revision model. e.g.
 
+    ```py
     from chronicle.models import AbstractRevision
 
     class Revision(AbstractRevision):
         user = models.ForeignKey(settings.AUTH_USER_MODEL)
         created = models.DateTimeField(auto_now_add=True)
+    ```
 
-2.) Set settings.REVISION_MODEL to point to your revision model. e.g.
+2. Set `settings.REVISION_MODEL` to point to your revision model. e.g.
 
+    ```py
     REVISION_MODEL = 'revision.Revision'
+    ```
 
-3.) Let your models inherit from `HistoryMixin` e.g.
+3. Let your models inherit from `HistoryMixin` e.g.
 
+    ```py
     from chronicle.models import HistoryMixin
     from django.db import models
 
     class Food(HistoryMixin, models.Model):
         name = models.CharField(max_length=50)
+    ```
 
-4.) Create all the migrations and run them:
+4. Create all the migrations and run them:
 
+    ```sh
     $ manage.py makemigrations
     $ manage.py migrate
+    ```
 
     That should create all the `_history` tables for your models
     that inherit from the `HistoryMixin`.
 
-5.) Create the database triggers
+5. Create the database triggers
 
+    ```sh
     $ manage.py create_history_triggers
+    ```
 
 
 Now every change to your models should be logged in the `_history` tables
@@ -42,26 +51,26 @@ and you can access the model history via the `History` model which becomes
 a field of the original class.
 
 
-Example usage:
---------------
+# Example usage:
 
-    # create
-    food = Food('Carot')
-    food.save()
-    assert(Food.History.objects.filter(id=food.id).count() == 1)
+```py
+# create
+food = Food('Carot')
+food.save()
+assert(Food.History.objects.filter(id=food.id).count() == 1)
 
-    # update
-    food.name = 'Carrot'
-    food.save()
-    assert(Food.History.objects.filter(id=food.id).count() == 2)
+# update
+food.name = 'Carrot'
+food.save()
+assert(Food.History.objects.filter(id=food.id).count() == 2)
 
-    # delete
-    food.delete()
-    assert(Food.History.objects.filter(id=food.id).count() == 3)
+# delete
+food.delete()
+assert(Food.History.objects.filter(id=food.id).count() == 3)
+```
 
 
-Why database triggers?
-----------------------
+# Why database triggers?
 
 The obvious choice to implement model history would be to connect a signal
 handler to the `post_save` and `post_delete` signal. This has some rather huge
@@ -84,17 +93,19 @@ The only real downside is the DB compatibility. Right now this package only
 supports the PostgreSQL database engine.
 
 
-How to issue queries without the Django ORM?
---------------------------------------------
+# How to issue queries without the Django ORM?
 
 Create a revision by inserting a row into the revision table and set the
 `chronicle.revision_id` session variable like so:
 
-    SET chronicle.revision_id = 42; -- replace 42 by the actual revision id
+```sql
+SET chronicle.revision_id = 42; -- replace 42 by the actual revision id
+```
 
 Once you have made all changes to your models don't forget to reset the
 session variable. Otherwise you might reuse the same revision by accident 
 in the same DB session:
 
-    SET chronicle.revision_id TO DEFAULT;
-
+```sql
+SET chronicle.revision_id TO DEFAULT;
+```
